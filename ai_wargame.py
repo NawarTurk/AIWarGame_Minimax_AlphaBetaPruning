@@ -348,15 +348,15 @@ class Game:
         elif coords.dst.col - 1 == coords.src.col and coords.dst.row == coords.src.row:
             move = RIGHT_MOVE
         else:
-            print("Invalid move. You cannot move diagonally or to a non-adjacent block")
+            # print("Invalid move. You cannot move diagonally or to a non-adjacent block")
             return False
 
         if src_player == Player.Attacker and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move not in (UP_MOVE, LEFT_MOVE):
-            print("The attacker’s {} unit can only move up or left".format(src_unit_type.name))
+            # print("The attacker’s {} unit can only move up or left".format(src_unit_type.name))
             return False
         
         if src_player == Player.Defender and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move not in (DOWN_MOVE, RIGHT_MOVE):
-            print("The defender’s {} unit can only move down or right".format(src_unit_type.name))
+            # print("The defender’s {} unit can only move down or right".format(src_unit_type.name))
             return False
         
         if src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall):
@@ -374,7 +374,7 @@ class Game:
             for unit in adjacent_units:
                 if unit != None:
                     if unit.player == self.next_player.next():
-                        print("The {} unit is engaged and cannot move".format(src_unit_type.name))
+                        # print("The {} unit is engaged and cannot move".format(src_unit_type.name))
                         return False          
         
         return True
@@ -692,6 +692,18 @@ class Game:
         depth = self.options.max_depth; # check
         is_alpha_beta = self.options.alpha_beta
 
+#DEL_______________________:
+        print("DEPTH")
+        print(depth)
+
+        print("is_alpha_beta")
+        print(is_alpha_beta)
+
+
+        #Force Depth to be 2 for testing purposes
+        depth = 2
+#DEL____________________^^
+
         if (self.next_player == Player.Attacker): # if the current player is attacker maximize
             maximizing = False # for the child minimize
             best_score = float('-inf')
@@ -699,16 +711,34 @@ class Game:
             maximizing = True # for the child
             best_score = float('inf')
 
+#DEL_______________________:
+        print("best score")
+        print(best_score)
+#DEL____________________^^
+
         move_candidates = list(self.move_candidates())
         if len(move_candidates) > 0:        
             for move in move_candidates:
                 gameCopy = self.clone()
                 gameCopy.perform_move(move)
+
+#DEL_______________________:
+                print("Child   -  One possible move:")
+                print(gameCopy)
+#DEL____________________^^
+
                 if (is_alpha_beta):
                     current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
                 else:
                     current_move_score = self.minimax(gameCopy, depth-1, maximizing)
-               
+ 
+#DEL_______________________:
+                print("Passes the minimax Function")
+                print("score")
+                print(current_move_score)
+#DEL____________________^^              
+                
+    
                 if (self.next_player == Player.Attacker):
                     if (current_move_score>best_score):
                         best_score = current_move_score
