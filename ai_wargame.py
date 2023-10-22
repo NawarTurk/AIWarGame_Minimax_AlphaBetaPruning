@@ -223,7 +223,7 @@ class Options:
     max_time : float | None = 5.0
     game_type : GameType = GameType.AttackerVsDefender
 #put it back to True
-    alpha_beta : bool = False 
+    alpha_beta : bool = True 
     max_turns : int | None = 100
     randomize_moves : bool = True
     broker : str | None = None
@@ -663,10 +663,6 @@ class Game:
         children = game.generate_children()
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
-            #DEL_____________________
-            # print (game)
-            # print(f"for this one we have eo is {game.e0()}")
-            #____________________________
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -686,9 +682,32 @@ class Game:
 
         return
     # do not touch
-    def alpha_beta (self, game, depth, maximizing):
-        return
-    
+    def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+        children = game.generate_children()
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
+            return game.e0() # assuming the use of e0
+        
+        if maximizing:
+            maxScore = float('-inf')
+            for child in children:
+                minimaxScore = self.alpha_beta(child, depth-1, alpha, beta, False, start_time, max_time_allowed)
+                maxScore = max(maxScore, minimaxScore)
+                alpha = max(alpha, minimaxScore)
+                if beta <= alpha:
+                    break
+            return maxScore
+        else:
+            minScore = float('inf')
+            for child in children:
+                minimaxScore = self.alpha_beta(child, depth-1, True, alpha, beta, start_time, max_time_allowed)
+                minScore = min(minScore, minimaxScore)
+                beta = min(beta, minimaxScore)
+                if beta <= alpha:
+                    break
+            return minScore
+
+
     ## renamed from random_move() __________________________________________________________________________>
     def generate_best_move(self, start_time, max_time_allowed) -> Tuple[int, CoordPair | None, float]:
         best_move = None
@@ -714,7 +733,7 @@ class Game:
                     gameCopy.perform_move(move)
 
                     if (is_alpha_beta):
-                        current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
+                        current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
                     else:
                         current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
 
