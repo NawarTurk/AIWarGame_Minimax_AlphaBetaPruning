@@ -587,13 +587,13 @@ class Game:
         if self.options.max_turns is not None and self.turns_played >= self.options.max_turns:
             print("max amount of turns reached")
             return Player.Defender
-        elif self._attacker_has_ai:
+        if self._attacker_has_ai:
             if self._defender_has_ai:
                 return None
             else:
                 return Player.Attacker    
-        elif self._defender_has_ai:
-            return Player.Defender
+        return Player.Defender
+
 
     def move_candidates(self) -> Iterable[CoordPair]:
         """Generate valid move candidates for the next player."""
@@ -705,24 +705,27 @@ class Game:
             best_score = float('inf')
 
         move_candidates = list(self.move_candidates())
-        if len(move_candidates) > 0:   
-            for move in move_candidates:
-                gameCopy = self.clone()
-                gameCopy.perform_move(move)
+        if len(move_candidates) > 0:  
+            if ((datetime.now() - start_time).total_seconds() > 0.95 * max_time_allowed):
+                best_move = move_candidates[0]
+            else:
+                for move in move_candidates:
+                    gameCopy = self.clone()
+                    gameCopy.perform_move(move)
 
-                if (is_alpha_beta):
-                    current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
-                else:
-                    current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
+                    if (is_alpha_beta):
+                        current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
+                    else:
+                        current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
 
-                if (self.next_player == Player.Attacker):
-                    if (current_move_score>best_score):
-                        best_score = current_move_score
-                        best_move = move
-                else:
-                    if (current_move_score<best_score):
-                        best_score = current_move_score
-                        best_move = move
+                    if (self.next_player == Player.Attacker):
+                        if (current_move_score>best_score):
+                            best_score = current_move_score
+                            best_move = move
+                    else:
+                        if (current_move_score<best_score):
+                            best_score = current_move_score
+                            best_move = move
 
 #DEL____________________^            
 
