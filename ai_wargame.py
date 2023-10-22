@@ -606,6 +606,40 @@ class Game:
             move.dst = src
             yield move.clone()
 
+    ### e0 function ## ______________________________________________________________>
+    def e0(self):
+        if (self.next_player == Player.Attacker):
+            attackerUnits = self.player_units(self.next_player)
+            defenderUnits = self.player_units(self.next_player.next())
+        else:
+            defenderUnits = self.player_units(self.next_player)
+            attackerUnits = self.player_units(self.next_player.next())
+
+        attackerScore = 0
+        defenderScore = 0
+        score = 0
+
+        for coordinates, unit in attackerUnits:
+            if unit.type==UnitType.AI:
+                attackerScore += 9999
+            else:
+                attackerScore += 3
+
+        for coordinates, unit in defenderUnits:
+            if unit.type==UnitType.AI:
+                defenderScore += 9999
+            else:
+                defenderScore += 3
+
+        score = attackerScore - defenderScore
+        return score
+    
+    def e1(self):
+        return
+    
+    def e2(self):
+        return
+
     def random_move(self) -> Tuple[int, CoordPair | None, float]:
         """Returns a random move."""
         move_candidates = list(self.move_candidates())
@@ -622,6 +656,8 @@ class Game:
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
+        print(f"Heuristic score: {self.e0()}")
+
         print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
