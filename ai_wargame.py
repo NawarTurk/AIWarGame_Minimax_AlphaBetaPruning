@@ -659,10 +659,10 @@ class Game:
             return None
     
     # do not touch
-    def minimax (self, game, depth, maximizing):
+    def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
         children = game.generate_children()
-    
-        if depth == 0 or children == None:
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        if depth == 0 or children == None or (elapsed_time < 0.9 * max_time_allowed):
             #DEL_____________________
             # print (game)
             # print(f"for this one we have eo is {game.e0()}")
@@ -690,7 +690,7 @@ class Game:
         return
     
     ## renamed from random_move() __________________________________________________________________________>
-    def generate_best_move(self) -> Tuple[int, CoordPair | None, float]:
+    def generate_best_move(self, start_time, max_time_allowed) -> Tuple[int, CoordPair | None, float]:
         best_move = None
         best_score = None
         maximizing = None
@@ -713,7 +713,7 @@ class Game:
                 if (is_alpha_beta):
                     current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
                 else:
-                    current_move_score = self.minimax(gameCopy, depth-1, maximizing)
+                    current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
 
                 if (self.next_player == Player.Attacker):
                     if (current_move_score>best_score):
@@ -759,7 +759,8 @@ class Game:
     def suggest_move(self) -> CoordPair | None:
         """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
         start_time = datetime.now()
-        (score, move, avg_depth) = self.generate_best_move()
+        max_time_allowed = self.options.max_time
+        (score, move, avg_depth) = self.generate_best_move(start_time, max_time_allowed)
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
