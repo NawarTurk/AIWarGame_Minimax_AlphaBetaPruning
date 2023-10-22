@@ -693,15 +693,15 @@ class Game:
         is_alpha_beta = self.options.alpha_beta
 
 #DEL_______________________:
-        print("DEPTH")
-        print(depth)
+        # print("DEPTH")
+        # print(depth)
 
-        print("is_alpha_beta")
-        print(is_alpha_beta)
+        # print("is_alpha_beta")
+        # print(is_alpha_beta)
 
 
-        #Force Depth to be 2 for testing purposes
-        depth = 2
+        # #Force Depth to be 2 for testing purposes
+        # depth = 2
 #DEL____________________^^
 
         if (self.next_player == Player.Attacker): # if the current player is attacker maximize
@@ -712,19 +712,25 @@ class Game:
             best_score = float('inf')
 
 #DEL_______________________:
-        print("best score")
-        print(best_score)
+        # print("best score")
+        # print(best_score)
 #DEL____________________^^
 
         move_candidates = list(self.move_candidates())
-        if len(move_candidates) > 0:        
+        if len(move_candidates) > 0:   
+#DEL_______________________:
+            # child_counter = 0
+#DEL____________________^^
+
+
             for move in move_candidates:
                 gameCopy = self.clone()
                 gameCopy.perform_move(move)
 
 #DEL_______________________:
-                print("Child   -  One possible move:")
-                print(gameCopy)
+                # print("\nChild")
+                # print(gameCopy)
+                # child_counter+=1
 #DEL____________________^^
 
                 if (is_alpha_beta):
@@ -733,11 +739,10 @@ class Game:
                     current_move_score = self.minimax(gameCopy, depth-1, maximizing)
  
 #DEL_______________________:
-                print("Passes the minimax Function")
-                print("score")
-                print(current_move_score)
+                # # print("Passes the minimax Function")
+                # print(f"score: {current_move_score}")
 #DEL____________________^^              
-                
+
     
                 if (self.next_player == Player.Attacker):
                     if (current_move_score>best_score):
@@ -747,6 +752,16 @@ class Game:
                     if (current_move_score<best_score):
                         best_score = current_move_score
                         best_move = move
+
+#DEL_______________________:
+            # print(f"number of children {child_counter}")
+
+            # print("Best move is")
+            # print(best_move)
+            # import sys
+            # sys.exit()
+#DEL____________________^^              
+
 
             return (best_score, best_move, 0)  # we need the to check the last number
         else:
