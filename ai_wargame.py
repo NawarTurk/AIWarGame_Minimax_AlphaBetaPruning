@@ -636,6 +636,7 @@ class Game:
     
     ### e1 function ## ______________________________________________________________>
     def e1(self):
+        # do not touch
         return
     
     ### e2 function ## ______________________________________________________________>
@@ -655,9 +656,10 @@ class Game:
         else:
             return None
     
-
+    # do not touch
     def minimax (self, game, depth, maximizing):
         return
+    # do not touch
     def alpha_beta (self, game, depth, maximizing):
         return
     
