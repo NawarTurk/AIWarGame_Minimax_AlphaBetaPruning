@@ -633,6 +633,7 @@ class Game:
                 defenderScore += 3
 
         score = attackerScore - defenderScore
+#Del       # print(f"eee is calculated and returned {score}")
         return score
     
     ### e1 function ## ______________________________________________________________>
@@ -662,20 +663,24 @@ class Game:
         children = game.generate_children()
     
         if depth == 0 or children == None:
+            #DEL_____________________
+            # print (game)
+            # print(f"for this one we have eo is {game.e0()}")
+            #____________________________
             return game.e0() # assuming the use of e0
         
         if maximizing:
-            max_e = float('-inf')
+            maxScore = float('-inf')
             for child in children:
-                e_score = self.minimax(child, depth-1, False)
-                max_e = max(max_e, e_score)
-            return max_e
+                minimaxScore = self.minimax(child, depth-1, False)
+                maxScore = max(maxScore, minimaxScore)
+            return maxScore
         else:
-            min_e = float('inf')
+            minScore = float('inf')
             for child in children:
-                e_score = self.minimax(child, depth-1, True)
-                min_e = min(min_e, e_score)
-            return min_e
+                minimaxScore = self.minimax(child, depth-1, True)
+                minScore = min(minScore, minimaxScore)
+            return minScore
 
 
 
@@ -692,18 +697,6 @@ class Game:
         depth = self.options.max_depth; # check
         is_alpha_beta = self.options.alpha_beta
 
-#DEL_______________________:
-        # print("DEPTH")
-        # print(depth)
-
-        # print("is_alpha_beta")
-        # print(is_alpha_beta)
-
-
-        # #Force Depth to be 2 for testing purposes
-        # depth = 2
-#DEL____________________^^
-
         if (self.next_player == Player.Attacker): # if the current player is attacker maximize
             maximizing = False # for the child minimize
             best_score = float('-inf')
@@ -711,39 +704,17 @@ class Game:
             maximizing = True # for the child
             best_score = float('inf')
 
-#DEL_______________________:
-        # print("best score")
-        # print(best_score)
-#DEL____________________^^
-
         move_candidates = list(self.move_candidates())
         if len(move_candidates) > 0:   
-#DEL_______________________:
-            # child_counter = 0
-#DEL____________________^^
-
-
             for move in move_candidates:
                 gameCopy = self.clone()
                 gameCopy.perform_move(move)
-
-#DEL_______________________:
-                # print("\nChild")
-                # print(gameCopy)
-                # child_counter+=1
-#DEL____________________^^
 
                 if (is_alpha_beta):
                     current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
                 else:
                     current_move_score = self.minimax(gameCopy, depth-1, maximizing)
- 
-#DEL_______________________:
-                # # print("Passes the minimax Function")
-                # print(f"score: {current_move_score}")
-#DEL____________________^^              
 
-    
                 if (self.next_player == Player.Attacker):
                     if (current_move_score>best_score):
                         best_score = current_move_score
@@ -753,17 +724,24 @@ class Game:
                         best_score = current_move_score
                         best_move = move
 
-#DEL_______________________:
-            # print(f"number of children {child_counter}")
+#DEL____________________^            
 
-            # print("Best move is")
+            # print("best nove for")
+            # print(self.next_player)
             # print(best_move)
-            # import sys
-            # sys.exit()
-#DEL____________________^^              
+            # print("with score")
+            # print(best_score)
 
+            gameCopy = self.clone()
+            gameCopy.perform_move(best_move)
+            best_move_e_score = gameCopy.e0()
 
-            return (best_score, best_move, 0)  # we need the to check the last number
+            # print("__________best move for")
+            # print(self.next_player)
+            # print(best_move)
+            # print("with score")
+            # print(best_move_e_score)
+            return (best_move_e_score, best_move, 0)  # we need the to check the last number
         else:
             return (0, None, 0)
 
@@ -785,7 +763,7 @@ class Game:
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
-        print(f"Average recursive depth: {avg_depth:0.1f}")
+        # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
             print(f"{k}:{self.stats.evaluations_per_depth[k]} ",end='')
