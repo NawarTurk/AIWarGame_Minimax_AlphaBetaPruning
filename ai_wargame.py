@@ -634,11 +634,23 @@ class Game:
         score = attackerScore - defenderScore
         return score
     
+    ### e1 function ## ______________________________________________________________>
     def e1(self):
         return
     
+    ### e2 function ## ______________________________________________________________>
     def e2(self):
         return
+    
+    ### e2 function ## ______________________________________________________________>
+    def generate_children(self):
+        children = []
+        move_candidates = list(self.move_candidates())      
+        for move in move_candidates:
+            gameCopy = self.clone()
+            gameCopy.perform_move(move)
+            children.append(gameCopy)
+        return children
 
     def random_move(self) -> Tuple[int, CoordPair | None, float]:
         """Returns a random move."""
@@ -648,6 +660,7 @@ class Game:
             return (0, move_candidates[0], 1)
         else:
             return (0, None, 0)
+       
 
     def suggest_move(self) -> CoordPair | None:
         """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
