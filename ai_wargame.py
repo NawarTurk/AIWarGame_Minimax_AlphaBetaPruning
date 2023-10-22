@@ -672,13 +672,13 @@ class Game:
         if maximizing:
             maxScore = float('-inf')
             for child in children:
-                minimaxScore = self.minimax(child, depth-1, False)
+                minimaxScore = self.minimax(child, depth-1, False, start_time, max_time_allowed)
                 maxScore = max(maxScore, minimaxScore)
             return maxScore
         else:
             minScore = float('inf')
             for child in children:
-                minimaxScore = self.minimax(child, depth-1, True)
+                minimaxScore = self.minimax(child, depth-1, True, start_time, max_time_allowed)
                 minScore = min(minScore, minimaxScore)
             return minScore
 
