@@ -642,35 +642,81 @@ class Game:
     def e2(self):
         return
     
-    ### e2 function ## ______________________________________________________________>
+    ### generate_children## ______________for minimax later________________________________________________>
     def generate_children(self):
         children = []
-        move_candidates = list(self.move_candidates())      
-        for move in move_candidates:
-            gameCopy = self.clone()
-            gameCopy.perform_move(move)
-            children.append(gameCopy)
-        return children
-
-    def random_move(self) -> Tuple[int, CoordPair | None, float]:
-        """Returns a random move."""
         move_candidates = list(self.move_candidates())
-        random.shuffle(move_candidates)
         if len(move_candidates) > 0:
-            return (0, move_candidates[0], 1)
+            for move in move_candidates:
+                gameCopy = self.clone()
+                gameCopy.perform_move(move)
+                children.append(gameCopy)
+            return children
+        else:
+            return None
+    
+
+    def minimax (self, game, depth, maximizing):
+        return
+    def alpha_beta (self, game, depth, maximizing):
+        return
+    
+    ## renamed from random_move() __________________________________________________________________________>
+    def generate_best_move(self) -> Tuple[int, CoordPair | None, float]:
+        best_move = None
+        best_score = None
+        maximizing = None
+        depth = self.options.max_depth; # check
+        is_alpha_beta = self.options.alpha_beta
+
+        if (self.next_player == Player.Attacker): # if the current player is attacker maximize
+            maximizing = False # for the child minimize
+            best_score = float('-inf')
+        else:
+            maximizing = True # for the child
+            best_score = float('inf')
+
+        move_candidates = list(self.move_candidates())
+        if len(move_candidates) > 0:        
+            for move in move_candidates:
+                gameCopy = self.clone()
+                gameCopy.perform_move(move)
+                if (is_alpha_beta):
+                    current_move_score = alpha_beta(gameCopy, depth-1, maximizing)
+                else:
+                    current_move_score = minimax(gameCopy, depth-1, maximizing)
+               
+                if (self.next_player == Player.Attacker):
+                    if (current_move_score>best_score):
+                        best_score = current_move_score
+                        best_move = move
+                else:
+                    if (current_move_score<best_score):
+                        best_score = current_move_score
+                        best_move = move
+
+            return (best_score, best_move, 0)  # we need the to check the last number
         else:
             return (0, None, 0)
+
+        
+        #Old code from the skeleton
+        # """Returns a random move."""
+        # move_candidates = list(self.move_candidates())
+        # random.shuffle(move_candidates)
+        # if len(move_candidates) > 0:
+        #     return (0, move_candidates[0], 1)
+        # else:
+        #     return (0, None, 0)
        
 
     def suggest_move(self) -> CoordPair | None:
         """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
         start_time = datetime.now()
-        (score, move, avg_depth) = self.random_move()
+        (score, move, avg_depth) = self.generate_best_move()
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
-        print(f"Heuristic score: {self.e0()}")
-
         print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
@@ -788,7 +834,7 @@ def main():
         game_mode = "Ai-Ai"
     
     # creating file with proper naming convention
-    filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(game.options.max_turns) + ".txt"
+    # filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(game.options.max_turns) + ".txt"
     # creating output file for the game
     # with open(filename, "w") as file:
     #     file.write("1. The game parameters: \n\tTimeout time: " + str(game.options.max_time) + " s\n\t" + 
@@ -800,7 +846,7 @@ def main():
                 
     # the main game loop
     while True:
-        with open(filename, "a") as file: #appending the completed moves to the created trace file
+        # with open(filename, "a") as file: #appending the completed moves to the created trace file
             # file.write("\n")
             print()
             print(game)
