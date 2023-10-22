@@ -659,6 +659,26 @@ class Game:
     
     # do not touch
     def minimax (self, game, depth, maximizing):
+        children = game.generate_children()
+    
+        if depth == 0 or children == None:
+            return game.e0() # assuming the use of e0
+        
+        if maximizing:
+            max_e = float('-inf')
+            for child in children:
+                e_score = self.minimax(child, depth-1, False)
+                max_e = max(max_e, e_score)
+            return max_e
+        else:
+            min_e = float('inf')
+            for child in children:
+                e_score = self.minimax(child, depth-1, True)
+                min_e = min(min_e, e_score)
+            return min_e
+
+
+
         return
     # do not touch
     def alpha_beta (self, game, depth, maximizing):
@@ -685,9 +705,9 @@ class Game:
                 gameCopy = self.clone()
                 gameCopy.perform_move(move)
                 if (is_alpha_beta):
-                    current_move_score = alpha_beta(gameCopy, depth-1, maximizing)
+                    current_move_score = self.alpha_beta(gameCopy, depth-1, maximizing)
                 else:
-                    current_move_score = minimax(gameCopy, depth-1, maximizing)
+                    current_move_score = self.minimax(gameCopy, depth-1, maximizing)
                
                 if (self.next_player == Player.Attacker):
                     if (current_move_score>best_score):
