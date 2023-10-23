@@ -366,10 +366,10 @@ class Game:
                 return (True, "attack")
             
             if src_unit.player == dst_unit.player:
-                if dst_unit.health == 9:
-                    return (False, "invalid")
-                else:
-                    return (True, "repair")
+                # if dst_unit.health == 9:
+                #     return (False, "invalid")
+                # else:
+                return (True, "repair")
         
 
         
@@ -776,9 +776,19 @@ class Game:
     
     # do not touch
     def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
+        game.next_turn()
         children = game.generate_children()
+        # counter =0
+        # import time
+        # for child in children:
+        #     print(f"grand children")
+        #     print (child)
+        #     time.sleep(0.5)
+
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
+            # print(f"current leaf eo is {game.e0()}")
+            # print(game)
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -799,9 +809,11 @@ class Game:
         return
     # do not touch
     def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+        game.next_turn()
         children = game.generate_children()
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
+            # print(f"current leaf eo is {game.e0()} of player")
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -844,14 +856,20 @@ class Game:
             if ((datetime.now() - start_time).total_seconds() > 0.95 * max_time_allowed):
                 best_move = move_candidates[0]
             else:
+                counter = 0
                 for move in move_candidates:
                     gameCopy = self.clone()
                     gameCopy.perform_move(move)
+                    counter +=1 
+                    # print(f"child number {counter}")
+                    # print(gameCopy)
 
                     if (is_alpha_beta):
                         current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
                     else:
                         current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
+
+                    # print(f"{self.next_player}: child score {current_move_score} _______ ")
 
                     if (self.next_player == Player.Attacker):
                         if (current_move_score>best_score):
