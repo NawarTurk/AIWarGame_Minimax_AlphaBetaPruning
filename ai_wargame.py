@@ -786,7 +786,7 @@ class Game:
         #     time.sleep(0.5)
 
         elapsed_time = (datetime.now() - start_time).total_seconds()
-        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
+        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()}")
             # print(game)
             return game.e0() # assuming the use of e0
@@ -812,7 +812,7 @@ class Game:
         game.next_turn()
         children = game.generate_children()
         elapsed_time = (datetime.now() - start_time).total_seconds()
-        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed):
+        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()} of player")
             return game.e0() # assuming the use of e0
         
