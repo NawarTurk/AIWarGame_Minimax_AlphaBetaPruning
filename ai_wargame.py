@@ -248,6 +248,7 @@ class Game:
     stats: Stats = field(default_factory=Stats)
     _attacker_has_ai : bool = True
     _defender_has_ai : bool = True
+    e0_counter : int = 0
 
     def __post_init__(self):
         """Automatically called after class init to set up the default board state."""
@@ -365,7 +366,7 @@ class Game:
             if src_unit.player != dst_unit.player:
                 return (True, "attack")
             
-            if src_unit.player == dst_unit.player:
+            if src_unit.player == dst_unit.player and dst_unit.health < 9:
                 # if dst_unit.health == 9:
                 #     return (False, "invalid")
                 # else:
@@ -404,7 +405,7 @@ class Game:
             return (True, "move")
 
 
-        return (True, "")
+        return (False, "invalid")
 
 
     # Nawar Code_End
@@ -789,6 +790,7 @@ class Game:
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()}")
             # print(game)
+            self.e0_counter +=1
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -814,6 +816,7 @@ class Game:
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()} of player")
+            self.e0_counter +=1
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -920,6 +923,7 @@ class Game:
         elapsed_seconds = (datetime.now() - start_time).total_seconds()
         self.stats.total_seconds += elapsed_seconds
         print(f"Heuristic score: {score}")
+        print(f"Cumulative evals {self.e0_counter}")
         # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
         for k in sorted(self.stats.evaluations_per_depth.keys()):
