@@ -222,7 +222,7 @@ class Options:
     min_depth : int | None = 2
     max_time : float | None = 5.0
     game_type : GameType = GameType.AttackerVsDefender
-    alpha_beta : bool = False 
+    alpha_beta : bool = True 
     max_turns : int | None = 100
     randomize_moves : bool = True
     broker : str | None = None
@@ -566,14 +566,15 @@ class Game:
 
     def computer_turn(self) -> CoordPair | None:
         """Computer plays a move."""
-        mv = self.suggest_move()
+        mv,score,elapsed_time, eval = self.suggest_move()
         if mv is not None:
             (success,result) = self.perform_move(mv)
             if success:
                 print(f"Computer {self.next_player.name}: ",end='')
                 print(result)
                 self.next_turn()
-        return mv
+        return mv, score, elapsed_time, eval
+
 
     def player_units(self, player: Player) -> Iterable[Tuple[Coord,Unit]]:
         """Iterates over all units belonging to a player."""
@@ -625,7 +626,6 @@ class Game:
         attackerScore = 0
         defenderScore = 0
         score = 0
-
         for coordinates, unit in attackerUnits:
             if unit.type==UnitType.AI:
                 attackerScore += 9999
@@ -639,11 +639,11 @@ class Game:
                 defenderScore += 3
 
         score = attackerScore - defenderScore
-#Del       # print(f"eee is calculated and returned {score}")
         return score
     
     ### e1 function ## ______________________________________________________________>
-    def e1(self):
+    def e1(self) -> int:
+
         if (self.next_player == Player.Attacker):
             attackerUnits = self.player_units(self.next_player)
             defenderUnits = self.player_units(self.next_player.next())
@@ -654,21 +654,36 @@ class Game:
         attackerScore = 0
         defenderScore = 0
         score = 0
+        defender_AI_health= 9
 
         for coordinates, unit in attackerUnits:
             if unit.type==UnitType.AI:
                 attackerScore += 9999
-            else:
+            elif unit.type==UnitType.Virus:
+                attackerScore += 9
+            elif unit.type==UnitType.Program:
                 attackerScore += 3
+            elif unit.type==UnitType.Firewall:
+                attackerScore += 1
 
         for coordinates, unit in defenderUnits:
             if unit.type==UnitType.AI:
                 defenderScore += 9999
-            else:
+                defender_AI_health = unit.health  # capture defender AI unit health
+                if coordinates.row == 0 and coordinates.col == 0:
+                    defenderScore += 1000000
+            elif unit.type==UnitType.Tech:
+                if coordinates.row == 0 and coordinates.col == 1 or coordinates.row == 1 and coordinates.col == 0:
+                    defenderScore += 1000000
                 defenderScore += 3
+            else:
+                defenderScore += 1
+
+        attackerScore = attackerScore + (9-defender_AI_health) * 10
+        defenderScore = defenderScore - (defender_AI_health-9) * 10
+
 
         score = attackerScore - defenderScore
-#Del       # print(f"eee is calculated and returned {score}")
         return score
     
     ### e2 function ## ______________________________________________________________>
@@ -708,7 +723,6 @@ class Game:
         else:
             return None
     
-    # do not touch
     def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
         self.level_counter = self.options.max_depth - depth
         self.my_dict[self.level_counter] += 1
@@ -740,7 +754,6 @@ class Game:
 
 
         return
-    # do not touch
     def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
         self.level_counter = self.options.max_depth - depth
         game.next_turn()
@@ -750,8 +763,6 @@ class Game:
             # print(f"current leaf eo is {game.e0()} of player")
             self.e0_counter +=1
             self.my_dict[self.level_counter] += 1
-
-
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -832,6 +843,7 @@ class Game:
 
 
     def suggest_move(self) -> CoordPair | None:
+        
         """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
         start_time = datetime.now()
         max_time_allowed = self.options.max_time
@@ -842,6 +854,7 @@ class Game:
         print(f"Cumulative evals {self.e0_counter}")
         # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
+        self.my_dict
         for k in sorted(self.my_dict.keys()):
             print(f"{k}:{self.my_dict[k]} ",end='')
             self.my_dict_percent[k] = self.my_dict[k]/self.e0_counter
@@ -852,13 +865,12 @@ class Game:
         print()
         print(f"Average branching factor: {self.num_of_children_cumulative/(self.turns_played+1)}")
 
-
-
         total_evals = sum(self.stats.evaluations_per_depth.values())
         if self.stats.total_seconds > 0:
             print(f"Eval perf.: {total_evals/self.stats.total_seconds/1000:0.1f}k/s")
         print(f"Elapsed time: {elapsed_seconds:0.1f}s")
-        return move
+
+        return move, score, elapsed_seconds, self.e0_counter
 
     def post_move_to_broker(self, move: CoordPair):
         """Send a move to the game broker."""
@@ -907,7 +919,6 @@ class Game:
         return None
 
 ##############################################################################################################
-
 def main():
     # parse command line arguments
     parser = argparse.ArgumentParser(
@@ -946,8 +957,6 @@ def main():
     # create a new game
     game = Game(options=options)
 
-
-
     #storing number of turns that have passed
     num_turn = 0
 
@@ -955,59 +964,74 @@ def main():
     type_of_game = game_type._name_.split("Vs")
     game_mode = ""
 
-    if (type_of_game[0] == "Attacker" or "Defender" and type_of_game[1] == "Attacker" or "Defender"):
+    if (type_of_game[0] == ("Attacker" or "Defender") and type_of_game[1] == ("Attacker" or "Defender")):
         game_mode = "H-H" 
-    elif (type_of_game[0] == "Attacker" or "Defender" and type_of_game[1] == "Comp" ):
+    elif (type_of_game[0] == ("Attacker" or "Defender") and type_of_game[1] == "Comp"):
         game_mode = "H-AI"
-    elif (type_of_game[0] == "Comp" and type_of_game[1] == "Attacker" or "Defender" ):
+    elif (type_of_game[0] == "Comp" and type_of_game[1] == ("Attacker" or "Defender")):
         game_mode = "AI-H"
     else:
-        game_mode = "Ai-Ai"
-    
+        game_mode = "AI-AI"
+      
     # creating file with proper naming convention
-    # filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(game.options.max_turns) + ".txt"
+    filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(int(game.options.max_turns)) + ".txt"
     # creating output file for the game
-    # with open(filename, "w") as file:
-    #     file.write("1. The game parameters: \n\tTimeout time: " + str(game.options.max_time) + " s\n\t" + 
-    #                "Max number of turns: " + str(game.options.max_turns) + " turns\n\t" + 
-    #                "Play Mode: " + game_mode + "\n")
-    #     file.write("\n")
-    #     file.write("2. Initial configuration of the board: \n\n" + str(game) + "\n")
-    #     file.write("3. Each Action of the game: \n")
+    with open(filename, "w") as file:
+        file.write("1. The game parameters: \n\tTimeout time: " + str(game.options.max_time) + " s\n\t" + 
+                   "Max number of turns: " + str(int(game.options.max_turns)) + " turns\n\t" + 
+                   "Play Mode: " + game_mode + "\n")
+        if ("Comp" in game_type._name_):
+            file.write("\tAlpha-Beta: " + str(game.options.alpha_beta) + "\n")
+            file.write("\tHEURISTIC: e0\n")                 
+        file.write("\n")
+        file.write("2. Initial configuration of the board: \n\n" + str(game) + "\n")
+        file.write("3. Each Action of the game: \n")
                 
     # the main game loop
     while True:
-        # with open(filename, "a") as file: #appending the completed moves to the created trace file
-            # file.write("\n")
+        with open(filename, "a") as file: #appending the completed moves to the created trace file
+            file.write("\n")
             print()
             print(game)
-            # file.write(str(game))
             
             winner = game.has_winner()
             if winner is not None:
                 print(f"{winner.name} wins in {num_turn} turns!")
-                # file.write(f"\n{winner.name} wins in {num_turn} turns!")
+                file.write(f"\n{winner.name} wins in {num_turn} turns!")
                 num_turn = num_turn + 1
                 break
             if game.options.game_type == GameType.AttackerVsDefender:
-                user_move = str(game.human_turn()).split(" ")                
+                user_move = game.human_turn()   
+                file.write(str(game) + "\n") 
+                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")          
             elif game.options.game_type == GameType.AttackerVsComp and game.next_player == Player.Attacker:
-                game.human_turn()               
+                user_move = game.human_turn()    
+                file.write(str(game) + "\n")
+                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")             
             elif game.options.game_type == GameType.CompVsDefender and game.next_player == Player.Defender:
-                game.human_turn()                
+                user_move = game.human_turn()    
+                file.write(str(game) + "\n")
+                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")                
             else:
                 player = game.next_player
-                move = game.computer_turn()
+                move, score, elapsed_time, eval = game.computer_turn()
+                print(move)
+                file.write(str(game) + "\n")
+                file.write("Move taken: " + str(move.src) + " to " + str(move.dst) + "\n")
+                file.write(f"Time for this action: {elapsed_time:0.1f}s \n")
+                file.write(f"Heuristic score: {score}\n")
+                file.write(f"Cumulative evals: {eval}\n")
                 if move is not None:
                     game.post_move_to_broker(move)
                 else:
                     print("Computer doesn't know what to do!!!")
-                    # file.write("Computer doesn't know what to do!!!")
+                    file.write("Computer doesn't know what to do!!!")
                     exit(1)
-            # file.write("Move taken: " + user_move[0] + " to " + user_move[1])
-            # file.write("\n----------------------------")
+                        
+            file.write("\n----------------------------")
             num_turn = num_turn + 1
-##############################################################################################################
+
+
 
 if __name__ == '__main__':
     main()
