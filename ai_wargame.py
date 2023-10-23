@@ -738,8 +738,28 @@ class Game:
         return
     
     ### e2 function ## ______________________________________________________________>
-    def e2(self):
-        return
+    def evaluate_state_e2(self) -> int:
+        # Initialize counters for both players
+        attacker_strength = 0
+        defender_strength = 0
+
+        # Iterate through the game state to calculate unit strengths
+        for row in self.board:
+            for unit in row:
+                if unit is not None:
+                    if unit.player == Player.Attacker:
+                        attacker_strength += unit.health
+                    else:
+                        defender_strength += unit.health
+
+        # Define the weights for the unit strengths
+        attacker_weight = 1
+        defender_weight = -1
+
+        # Calculate the evaluation score
+        evaluation = (attacker_weight * attacker_strength) + (defender_weight * defender_strength)
+
+        return evaluation
     
     ### generate_children## ______________for minimax later________________________________________________>
     def generate_children(self):
