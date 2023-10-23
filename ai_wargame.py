@@ -311,31 +311,34 @@ class Game:
             self.remove_dead(coord)
 
     # to do Nawar, make sure each unit moves as described 
-    def is_valid_move(self, coords : CoordPair) -> bool:
+    def is_valid_move(self, coords : CoordPair) -> Tuple[bool,str]:
         """Validate a move expressed as a CoordPair. TODO: WRITE MISSING CODE!!!"""
 
         if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
             # print("Invalid Coordinates!")
-            return False
+            return (False, "invalid")
         
         src_unit = self.get(coords.src)
         if src_unit is None or src_unit.player != self.next_player:
-            print("Please choose one of your units")
-            return False
+            # print("Please choose one of your units")
+            return (False, "invalid")
         
-        dst_unit = self.get(coords.dst)
-        if (dst_unit is not None):
-            return False
+        # dst_unit = self.get(coords.dst)
+        # if (dst_unit is not None):
+        #     return False
        
-        # Nawar Code_Start
 
         UP_MOVE = "up"    
         DOWN_MOVE = "down"
         LEFT_MOVE = "left"
         RIGHT_MOVE = "right"
-        
+        IN_PLACE_MOVE = "in place"
         src_unit_type = self.get(coords.src).type
         src_player = self.get(coords.src).player
+        src_unit = self.get(coords.src)
+        dst_unit = self.get(coords.dst)
+
+
 
         move = ""
 
@@ -347,17 +350,28 @@ class Game:
             move = LEFT_MOVE
         elif coords.dst.col - 1 == coords.src.col and coords.dst.row == coords.src.row:
             move = RIGHT_MOVE
+        elif coords.dst.col  == coords.src.col and coords.dst.row == coords.src.row:
+          move = IN_PLACE_MOVE 
         else:
             # print("Invalid move. You cannot move diagonally or to a non-adjacent block")
-            return False
+            return (False, "invalid")
 
-        if src_player == Player.Attacker and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move not in (UP_MOVE, LEFT_MOVE):
-            # print("The attacker’s {} unit can only move up or left".format(src_unit_type.name))
-            return False
+
+
+        if dst_unit is not None:
+            if (move == IN_PLACE_MOVE):
+                return (True, "self-destruct")
+
+            if src_unit.player != dst_unit.player:
+                return (True, "attack")
+            
+            if src_unit.player == dst_unit.player:
+                if dst_unit.health == 9:
+                    return (False, "invalid")
+                else:
+                    return (True, "repair")
         
-        if src_player == Player.Defender and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move not in (DOWN_MOVE, RIGHT_MOVE):
-            # print("The defender’s {} unit can only move down or right".format(src_unit_type.name))
-            return False
+
         
         if src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall):
             adjacent_units = []
@@ -375,9 +389,22 @@ class Game:
                 if unit != None:
                     if unit.player == self.next_player.next():
                         # print("The {} unit is engaged and cannot move".format(src_unit_type.name))
-                        return False          
+                        return (False, "invalid")         
         
-        return True
+        
+        if src_player == Player.Attacker and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move in (UP_MOVE, LEFT_MOVE) and self.get(coords.dst) is None:
+            # print("The attacker’s {} unit can only move up or left".format(src_unit_type.name))
+            return (True, "move")
+        
+        if src_player == Player.Defender and src_unit_type in (UnitType.AI, UnitType.Program, UnitType.Firewall) and move in (DOWN_MOVE, RIGHT_MOVE) and self.get(coords.dst) is None:
+            # print("The defender’s {} unit can only move down or right".format(src_unit_type.name))
+            return (True, "move")
+        
+        if src_unit_type in (UnitType.Tech, UnitType.Virus) and move in (UP_MOVE, DOWN_MOVE, RIGHT_MOVE, LEFT_MOVE) and self.get(coords.dst) is None:
+            return (True, "move")
+
+
+        return (True, "")
 
 
     # Nawar Code_End
@@ -387,95 +414,160 @@ class Game:
         """Validate and perform a move expressed as a CoordPair. TODO: WRITE MISSING CODE!!!"""
 
         # checking if it is a valid move. if it is,move it and exit the function
-        if self.is_valid_move(coords):
-            self.set(coords.dst,self.get(coords.src))
-            self.set(coords.src,None)
-            return (True,"Valid move/displacement")
-    
-        UP_MOVE = "up"    
-        DOWN_MOVE = "down"
-        LEFT_MOVE = "left"
-        RIGHT_MOVE = "right"
-        IN_PLACE_MOVE = "in place"
-        move_direction = "not valid attack direction"
+        
+        bool, msg = self.is_valid_move(coords)
 
         src_unit = self.get(coords.src)
         dst_unit = self.get(coords.dst)
+        
+        if (msg == "move"): 
+            self.set(coords.dst,self.get(coords.src))
+            self.set(coords.src,None)
+            return (True,"Valid move/displacement")
+        
+        elif (msg == "attack"):
+            # Calculate damage to both units
+            src_damage = src_unit.damage_amount(dst_unit)
+            dst_damage = dst_unit.damage_amount(src_unit)
+            # Apply damage to units
+            self.mod_health(coords.src, -dst_damage)
+            self.mod_health(coords.dst, -src_damage)
+            # # Remove units with zero or less health
+            # if not src_unit.is_alive():
+            #     self.set(coords.src, None)
+            # if not dst_unit.is_alive():
+            #     self.set(coords.dst, None)
+            return (True, "\nAttack successful")
+        elif (msg == "repair"):
+        # Calculate health change for the target unit
+            repair_amount = src_unit.repair_amount(dst_unit)
+            # Apply health change to target unit
+            dst_unit.mod_health(repair_amount)
+            return (True, "\nRepair successful")
+        elif (msg == "self-destruct"):
+            self.mod_health(coords.src, -100)
+            # Apply self-destruct damage to surrounding units
+            for adjacent_coord in coords.src.iter_adjacent():
+                adjacent_unit = self.get(adjacent_coord)
+                if adjacent_unit:
+                    adjacent_unit.mod_health(-2)
+                    if not adjacent_unit.is_alive():
+                        self.set(adjacent_coord, None)
 
-        if coords.dst.row + 1 == coords.src.row and coords.dst.col == coords.src.col:
-            move_direction = UP_MOVE
-        elif coords.dst.row - 1 == coords.src.row and coords.dst.col == coords.src.col:
-            move_direction = DOWN_MOVE
-        elif coords.dst.col + 1 == coords.src.col and coords.dst.row == coords.src.row: 
-            move_direction = LEFT_MOVE
-        elif coords.dst.col - 1 == coords.src.col and coords.dst.row == coords.src.row:
-            move_direction = RIGHT_MOVE
-        elif coords.dst.col  == coords.src.col and coords.dst.row == coords.src.row:
-           move_direction = IN_PLACE_MOVE 
+            # Calculate and add the diagonal coordinates
+            diagonal_coords = [
+                Coord(coords.src.row - 1, coords.src.col - 1),
+                Coord(coords.src.row - 1, coords.src.col + 1),
+                Coord(coords.src.row + 1, coords.src.col - 1),
+                Coord(coords.src.row + 1, coords.src.col + 1),
+            ]
 
-        # checking if it is a valid attack. if it is, attack and exit the fucntion
-        if move_direction in (UP_MOVE, DOWN_MOVE, LEFT_MOVE, RIGHT_MOVE, IN_PLACE_MOVE) and self.get(coords.dst) != None and self.get(coords.src).player == self.next_player:
-            if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
-                print("Invalid Coordinates!")
-                return False
+            for diagonal_coord in diagonal_coords:
+                diagonal_unit = self.get(diagonal_coord)
+                if diagonal_unit:
+                    diagonal_unit.mod_health(-2)
+                    if not diagonal_unit.is_alive():
+                        self.set(diagonal_coord, None)
 
-            # Check if it's an attack move
-            if src_unit.player != dst_unit.player:
-                # Calculate damage to both units
-                src_damage = src_unit.damage_amount(dst_unit)
-                dst_damage = dst_unit.damage_amount(src_unit)
-
-                # Apply damage to units
-                self.mod_health(coords.src, -dst_damage)
-                self.mod_health(coords.dst, -src_damage)
-
-                # Remove units with zero or less health
-                if not src_unit.is_alive():
-                    self.set(coords.src, None)
-                if not dst_unit.is_alive():
-                    self.set(coords.dst, None)
-
-                return (True, "\nAttack successful")
-
-            # Check if it's a repair move
-            elif src_unit.player == dst_unit.player and src_unit != dst_unit:
-                # Calculate health change for the target unit
-                repair_amount = src_unit.repair_amount(dst_unit)
-
-                # Apply health change to target unit
-                dst_unit.mod_health(repair_amount)
-
-                return (True, "\nRepair successful")
-
-            # Check if it's a self-destruct move
-            elif src_unit == dst_unit:
-                self.mod_health(coords.src, -100)
-                # Apply self-destruct damage to surrounding units
-                for adjacent_coord in coords.src.iter_adjacent():
-                    adjacent_unit = self.get(adjacent_coord)
-                    if adjacent_unit:
-                        adjacent_unit.mod_health(-2)
-                        if not adjacent_unit.is_alive():
-                            self.set(adjacent_coord, None)
-
-                # Calculate and add the diagonal coordinates
-                diagonal_coords = [
-                    Coord(coords.src.row - 1, coords.src.col - 1),
-                    Coord(coords.src.row - 1, coords.src.col + 1),
-                    Coord(coords.src.row + 1, coords.src.col - 1),
-                    Coord(coords.src.row + 1, coords.src.col + 1),
-                ]
-
-                for diagonal_coord in diagonal_coords:
-                    diagonal_unit = self.get(diagonal_coord)
-                    if diagonal_unit:
-                        diagonal_unit.mod_health(-2)
-                        if not diagonal_unit.is_alive():
-                            self.set(diagonal_coord, None)
-
-                return (True, "\nSelf-destructed")
+            return (True, "\nSelf-destructed")
+        else:
+            return (False, "\nIllegal Move!")
             
-        return (False, "\nIllegal Move!")
+
+
+ 
+        
+
+
+        # # if self.is_valid_move(coords):
+        # #     self.set(coords.dst,self.get(coords.src))
+        # #     self.set(coords.src,None)
+        # #     return (True,"Valid move/displacement")
+    
+        # UP_MOVE = "up"    
+        # DOWN_MOVE = "down"
+        # LEFT_MOVE = "left"
+        # RIGHT_MOVE = "right"
+        # IN_PLACE_MOVE = "in place"
+        # move_direction = "not valid attack direction"
+
+        # src_unit = self.get(coords.src)
+        # dst_unit = self.get(coords.dst)
+
+        # if coords.dst.row + 1 == coords.src.row and coords.dst.col == coords.src.col:
+        #     move_direction = UP_MOVE
+        # elif coords.dst.row - 1 == coords.src.row and coords.dst.col == coords.src.col:
+        #     move_direction = DOWN_MOVE
+        # elif coords.dst.col + 1 == coords.src.col and coords.dst.row == coords.src.row: 
+        #     move_direction = LEFT_MOVE
+        # elif coords.dst.col - 1 == coords.src.col and coords.dst.row == coords.src.row:
+        #     move_direction = RIGHT_MOVE
+        # elif coords.dst.col  == coords.src.col and coords.dst.row == coords.src.row:
+        #    move_direction = IN_PLACE_MOVE 
+
+        # # checking if it is a valid attack. if it is, attack and exit the fucntion
+        # if move_direction in (UP_MOVE, DOWN_MOVE, LEFT_MOVE, RIGHT_MOVE, IN_PLACE_MOVE) and self.get(coords.dst) != None and self.get(coords.src).player == self.next_player:
+        #     if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
+        #         print("Invalid Coordinates!")
+        #         return False
+
+        #     # Check if it's an attack move
+        #     if src_unit.player != dst_unit.player:
+        #         # # Calculate damage to both units
+        #         # src_damage = src_unit.damage_amount(dst_unit)
+        #         # dst_damage = dst_unit.damage_amount(src_unit)
+
+        #         # # Apply damage to units
+        #         # self.mod_health(coords.src, -dst_damage)
+        #         # self.mod_health(coords.dst, -src_damage)
+
+        #         # # Remove units with zero or less health
+        #         # if not src_unit.is_alive():
+        #         #     self.set(coords.src, None)
+        #         # if not dst_unit.is_alive():
+        #         #     self.set(coords.dst, None)
+
+        #         # return (True, "\nAttack successful")
+
+        #     # Check if it's a repair move
+        #     elif src_unit.player == dst_unit.player and src_unit != dst_unit:
+        #         # Calculate health change for the target unit
+        #         repair_amount = src_unit.repair_amount(dst_unit)
+
+        #         # Apply health change to target unit
+        #         dst_unit.mod_health(repair_amount)
+
+        #         return (True, "\nRepair successful")
+
+        #     # Check if it's a self-destruct move
+        #     elif src_unit == dst_unit:
+        #         self.mod_health(coords.src, -100)
+        #         # Apply self-destruct damage to surrounding units
+        #         for adjacent_coord in coords.src.iter_adjacent():
+        #             adjacent_unit = self.get(adjacent_coord)
+        #             if adjacent_unit:
+        #                 adjacent_unit.mod_health(-2)
+        #                 if not adjacent_unit.is_alive():
+        #                     self.set(adjacent_coord, None)
+
+        #         # Calculate and add the diagonal coordinates
+        #         diagonal_coords = [
+        #             Coord(coords.src.row - 1, coords.src.col - 1),
+        #             Coord(coords.src.row - 1, coords.src.col + 1),
+        #             Coord(coords.src.row + 1, coords.src.col - 1),
+        #             Coord(coords.src.row + 1, coords.src.col + 1),
+        #         ]
+
+        #         for diagonal_coord in diagonal_coords:
+        #             diagonal_unit = self.get(diagonal_coord)
+        #             if diagonal_unit:
+        #                 diagonal_unit.mod_health(-2)
+        #                 if not diagonal_unit.is_alive():
+        #                     self.set(diagonal_coord, None)
+
+        #         return (True, "\nSelf-destructed")
+            
+        # return (False, "\nIllegal Move!")
 
     def next_turn(self):
         """Transitions game to the next turn."""
@@ -602,7 +694,11 @@ class Game:
             move.src = src
             for dst in src.iter_adjacent():
                 move.dst = dst
-                if self.is_valid_move(move):
+                # copyGame = self.clone()
+                # valid, msg = self.perform_move(move)
+                valid, msg = self.is_valid_move(move);
+                # if self.is_valid_move(move) :
+                if valid :
                     yield move.clone()
             move.dst = src
             yield move.clone()
