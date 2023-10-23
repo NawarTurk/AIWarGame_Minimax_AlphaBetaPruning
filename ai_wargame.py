@@ -222,7 +222,7 @@ class Options:
     min_depth : int | None = 2
     max_time : float | None = 5.0
     game_type : GameType = GameType.AttackerVsDefender
-    alpha_beta : bool = True 
+    alpha_beta : bool = False 
     max_turns : int | None = 100
     randomize_moves : bool = True
     broker : str | None = None
@@ -251,6 +251,7 @@ class Game:
     level_counter: int = 0
     my_dict: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
     my_dict_percent: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
+    num_of_children_cumulative: int = 0
 
 
     
@@ -643,8 +644,32 @@ class Game:
     
     ### e1 function ## ______________________________________________________________>
     def e1(self):
-        # do not touch
-        return
+        if (self.next_player == Player.Attacker):
+            attackerUnits = self.player_units(self.next_player)
+            defenderUnits = self.player_units(self.next_player.next())
+        else:
+            defenderUnits = self.player_units(self.next_player)
+            attackerUnits = self.player_units(self.next_player.next())
+
+        attackerScore = 0
+        defenderScore = 0
+        score = 0
+
+        for coordinates, unit in attackerUnits:
+            if unit.type==UnitType.AI:
+                attackerScore += 9999
+            else:
+                attackerScore += 3
+
+        for coordinates, unit in defenderUnits:
+            if unit.type==UnitType.AI:
+                defenderScore += 9999
+            else:
+                defenderScore += 3
+
+        score = attackerScore - defenderScore
+#Del       # print(f"eee is calculated and returned {score}")
+        return score
     
     ### e2 function ## ______________________________________________________________>
     def e2(self) -> int:
@@ -765,6 +790,7 @@ class Game:
             best_score = float('inf')
 
         move_candidates = list(self.move_candidates())
+        self.num_of_children_cumulative += len(move_candidates)
         if len(move_candidates) > 0:  
             if ((datetime.now() - start_time).total_seconds() > 0.95 * max_time_allowed):
                 best_move = move_candidates[0]
@@ -816,7 +842,6 @@ class Game:
         print(f"Cumulative evals {self.e0_counter}")
         # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
-        self.my_dict
         for k in sorted(self.my_dict.keys()):
             print(f"{k}:{self.my_dict[k]} ",end='')
             self.my_dict_percent[k] = self.my_dict[k]/self.e0_counter
@@ -825,6 +850,7 @@ class Game:
         for k in sorted(self.my_dict_percent.keys()):
             print(f"{k}: {self.my_dict_percent[k] * 100:.2f}% ", end='')
         print()
+        print(f"Average branching factor: {self.num_of_children_cumulative/(self.turns_played+1)}")
 
 
 
