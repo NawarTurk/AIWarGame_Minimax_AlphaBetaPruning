@@ -249,6 +249,12 @@ class Game:
     _attacker_has_ai : bool = True
     _defender_has_ai : bool = True
     e0_counter : int = 0
+    level_counter: int = 0
+    my_dict: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
+    my_dict_percent: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
+
+
+    
 
     def __post_init__(self):
         """Automatically called after class init to set up the default board state."""
@@ -777,6 +783,8 @@ class Game:
     
     # do not touch
     def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
+        self.level_counter = self.options.max_depth - depth
+        self.my_dict[self.level_counter] += 1
         game.next_turn()
         children = game.generate_children()
         # counter =0
@@ -790,7 +798,9 @@ class Game:
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()}")
             # print(game)
+            self.my_dict[self.level_counter] += 1
             self.e0_counter +=1
+
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -811,12 +821,16 @@ class Game:
         return
     # do not touch
     def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+        self.level_counter = self.options.max_depth - depth
         game.next_turn()
         children = game.generate_children()
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()} of player")
             self.e0_counter +=1
+            self.my_dict[self.level_counter] += 1
+
+
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -860,18 +874,18 @@ class Game:
                 best_move = move_candidates[0]
             else:
                 counter = 0
+
                 for move in move_candidates:
                     gameCopy = self.clone()
                     gameCopy.perform_move(move)
                     counter +=1 
                     # print(f"child number {counter}")
                     # print(gameCopy)
-
                     if (is_alpha_beta):
                         current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
                     else:
                         current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
-
+                    # print(self.level_counter)
                     # print(f"{self.next_player}: child score {current_move_score} _______ ")
 
                     if (self.next_player == Player.Attacker):
@@ -890,7 +904,6 @@ class Game:
             # print(best_move)
             # print("with score")
             # print(best_score)
-
             gameCopy = self.clone()
             gameCopy.perform_move(best_move)
             best_move_e_score = gameCopy.e0()
@@ -926,9 +939,20 @@ class Game:
         print(f"Cumulative evals {self.e0_counter}")
         # print(f"Average recursive depth: {avg_depth:0.1f}")
         print(f"Evals per depth: ",end='')
-        for k in sorted(self.stats.evaluations_per_depth.keys()):
-            print(f"{k}:{self.stats.evaluations_per_depth[k]} ",end='')
+        self.my_dict
+        for k in sorted(self.my_dict.keys()):
+            print(f"{k}:{self.my_dict[k]} ",end='')
+            self.my_dict_percent[k] = self.my_dict[k]/self.e0_counter
         print()
+        print(f"Evals per depth%: ",end='')
+        for k in sorted(self.my_dict_percent.keys()):
+            print(f"{k}: {self.my_dict_percent[k] * 100:.2f}% ", end='')
+        print()
+
+        # for k in sorted(self.stats.evaluations_per_depth.keys()):
+        #     print(f"{k}:{self.stats.evaluations_per_depth[k]} ",end='')
+        # print()
+
         total_evals = sum(self.stats.evaluations_per_depth.values())
         if self.stats.total_seconds > 0:
             print(f"Eval perf.: {total_evals/self.stats.total_seconds/1000:0.1f}k/s")
@@ -1023,6 +1047,8 @@ def main():
 
     # create a new game
     game = Game(options=options)
+
+
 
     #storing number of turns that have passed
     num_turn = 0
