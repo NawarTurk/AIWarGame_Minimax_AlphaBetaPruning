@@ -222,7 +222,6 @@ class Options:
     min_depth : int | None = 2
     max_time : float | None = 5.0
     game_type : GameType = GameType.AttackerVsDefender
-#put it back to True
     alpha_beta : bool = True 
     max_turns : int | None = 100
     randomize_moves : bool = True
@@ -373,9 +372,6 @@ class Game:
                 return (True, "attack")
             
             if src_unit.player == dst_unit.player and dst_unit.health < 9:
-                # if dst_unit.health == 9:
-                #     return (False, "invalid")
-                # else:
                 return (True, "repair")
         
 
@@ -439,11 +435,7 @@ class Game:
             # Apply damage to units
             self.mod_health(coords.src, -dst_damage)
             self.mod_health(coords.dst, -src_damage)
-            # # Remove units with zero or less health
-            # if not src_unit.is_alive():
-            #     self.set(coords.src, None)
-            # if not dst_unit.is_alive():
-            #     self.set(coords.dst, None)
+
             return (True, "\nAttack successful")
         elif (msg == "repair"):
         # Calculate health change for the target unit
@@ -486,95 +478,7 @@ class Game:
         
 
 
-        # # if self.is_valid_move(coords):
-        # #     self.set(coords.dst,self.get(coords.src))
-        # #     self.set(coords.src,None)
-        # #     return (True,"Valid move/displacement")
-    
-        # UP_MOVE = "up"    
-        # DOWN_MOVE = "down"
-        # LEFT_MOVE = "left"
-        # RIGHT_MOVE = "right"
-        # IN_PLACE_MOVE = "in place"
-        # move_direction = "not valid attack direction"
-
-        # src_unit = self.get(coords.src)
-        # dst_unit = self.get(coords.dst)
-
-        # if coords.dst.row + 1 == coords.src.row and coords.dst.col == coords.src.col:
-        #     move_direction = UP_MOVE
-        # elif coords.dst.row - 1 == coords.src.row and coords.dst.col == coords.src.col:
-        #     move_direction = DOWN_MOVE
-        # elif coords.dst.col + 1 == coords.src.col and coords.dst.row == coords.src.row: 
-        #     move_direction = LEFT_MOVE
-        # elif coords.dst.col - 1 == coords.src.col and coords.dst.row == coords.src.row:
-        #     move_direction = RIGHT_MOVE
-        # elif coords.dst.col  == coords.src.col and coords.dst.row == coords.src.row:
-        #    move_direction = IN_PLACE_MOVE 
-
-        # # checking if it is a valid attack. if it is, attack and exit the fucntion
-        # if move_direction in (UP_MOVE, DOWN_MOVE, LEFT_MOVE, RIGHT_MOVE, IN_PLACE_MOVE) and self.get(coords.dst) != None and self.get(coords.src).player == self.next_player:
-        #     if not self.is_valid_coord(coords.src) or not self.is_valid_coord(coords.dst):
-        #         print("Invalid Coordinates!")
-        #         return False
-
-        #     # Check if it's an attack move
-        #     if src_unit.player != dst_unit.player:
-        #         # # Calculate damage to both units
-        #         # src_damage = src_unit.damage_amount(dst_unit)
-        #         # dst_damage = dst_unit.damage_amount(src_unit)
-
-        #         # # Apply damage to units
-        #         # self.mod_health(coords.src, -dst_damage)
-        #         # self.mod_health(coords.dst, -src_damage)
-
-        #         # # Remove units with zero or less health
-        #         # if not src_unit.is_alive():
-        #         #     self.set(coords.src, None)
-        #         # if not dst_unit.is_alive():
-        #         #     self.set(coords.dst, None)
-
-        #         # return (True, "\nAttack successful")
-
-        #     # Check if it's a repair move
-        #     elif src_unit.player == dst_unit.player and src_unit != dst_unit:
-        #         # Calculate health change for the target unit
-        #         repair_amount = src_unit.repair_amount(dst_unit)
-
-        #         # Apply health change to target unit
-        #         dst_unit.mod_health(repair_amount)
-
-        #         return (True, "\nRepair successful")
-
-        #     # Check if it's a self-destruct move
-        #     elif src_unit == dst_unit:
-        #         self.mod_health(coords.src, -100)
-        #         # Apply self-destruct damage to surrounding units
-        #         for adjacent_coord in coords.src.iter_adjacent():
-        #             adjacent_unit = self.get(adjacent_coord)
-        #             if adjacent_unit:
-        #                 adjacent_unit.mod_health(-2)
-        #                 if not adjacent_unit.is_alive():
-        #                     self.set(adjacent_coord, None)
-
-        #         # Calculate and add the diagonal coordinates
-        #         diagonal_coords = [
-        #             Coord(coords.src.row - 1, coords.src.col - 1),
-        #             Coord(coords.src.row - 1, coords.src.col + 1),
-        #             Coord(coords.src.row + 1, coords.src.col - 1),
-        #             Coord(coords.src.row + 1, coords.src.col + 1),
-        #         ]
-
-        #         for diagonal_coord in diagonal_coords:
-        #             diagonal_unit = self.get(diagonal_coord)
-        #             if diagonal_unit:
-        #                 diagonal_unit.mod_health(-2)
-        #                 if not diagonal_unit.is_alive():
-        #                     self.set(diagonal_coord, None)
-
-        #         return (True, "\nSelf-destructed")
-            
-        # return (False, "\nIllegal Move!")
+       
 
     def next_turn(self):
         """Transitions game to the next turn."""
@@ -701,10 +605,8 @@ class Game:
             move.src = src
             for dst in src.iter_adjacent():
                 move.dst = dst
-                # copyGame = self.clone()
-                # valid, msg = self.perform_move(move)
+
                 valid, msg = self.is_valid_move(move);
-                # if self.is_valid_move(move) :
                 if valid :
                     yield move.clone()
             move.dst = src
@@ -745,7 +647,7 @@ class Game:
         return
     
     ### e2 function ## ______________________________________________________________>
-    def evaluate_state_e2(self) -> int:
+    def e2(self) -> int:
         # Initialize counters for both players
         attacker_strength = 0
         defender_strength = 0
@@ -787,12 +689,6 @@ class Game:
         self.my_dict[self.level_counter] += 1
         game.next_turn()
         children = game.generate_children()
-        # counter =0
-        # import time
-        # for child in children:
-        #     print(f"grand children")
-        #     print (child)
-        #     time.sleep(0.5)
 
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
@@ -879,14 +775,12 @@ class Game:
                     gameCopy = self.clone()
                     gameCopy.perform_move(move)
                     counter +=1 
-                    # print(f"child number {counter}")
-                    # print(gameCopy)
+
                     if (is_alpha_beta):
                         current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
                     else:
                         current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
-                    # print(self.level_counter)
-                    # print(f"{self.next_player}: child score {current_move_score} _______ ")
+ 
 
                     if (self.next_player == Player.Attacker):
                         if (current_move_score>best_score):
@@ -897,36 +791,19 @@ class Game:
                             best_score = current_move_score
                             best_move = move
 
-#DEL____________________^            
 
-            # print("best nove for")
-            # print(self.next_player)
-            # print(best_move)
-            # print("with score")
-            # print(best_score)
+
             gameCopy = self.clone()
             gameCopy.perform_move(best_move)
             best_move_e_score = gameCopy.e0()
 
-            # print("__________best move for")
-            # print(self.next_player)
-            # print(best_move)
-            # print("with score")
-            # print(best_move_e_score)
-            return (best_move_e_score, best_move, 0)  # we need the to check the last number
+
+            return (best_move_e_score, best_move, 0)  
         else:
             return (0, None, 0)
 
         
-        #Old code from the skeleton
-        # """Returns a random move."""
-        # move_candidates = list(self.move_candidates())
-        # random.shuffle(move_candidates)
-        # if len(move_candidates) > 0:
-        #     return (0, move_candidates[0], 1)
-        # else:
-        #     return (0, None, 0)
-       
+
 
     def suggest_move(self) -> CoordPair | None:
         """Suggest the next move using minimax alpha beta. TODO: REPLACE RANDOM_MOVE WITH PROPER GAME LOGIC!!!"""
@@ -949,9 +826,7 @@ class Game:
             print(f"{k}: {self.my_dict_percent[k] * 100:.2f}% ", end='')
         print()
 
-        # for k in sorted(self.stats.evaluations_per_depth.keys()):
-        #     print(f"{k}:{self.stats.evaluations_per_depth[k]} ",end='')
-        # print()
+
 
         total_evals = sum(self.stats.evaluations_per_depth.values())
         if self.stats.total_seconds > 0:
@@ -971,7 +846,6 @@ class Game:
         try:
             r = requests.post(self.options.broker, json=data)
             if r.status_code == 200 and r.json()['success'] and r.json()['data'] == data:
-                # print(f"Sent move to broker: {move}")
                 pass
             else:
                 print(f"Broker error: status code: {r.status_code}, response: {r.json()}")
@@ -996,11 +870,9 @@ class Game:
                         print(f"Got move from broker: {move}")
                         return move
                     else:
-                        # print("Got broker data for wrong turn.")
-                        # print(f"Wanted {self.turns_played+1}, got {data['turn']}")
+
                         pass
                 else:
-                    # print("Got no data from broker")
                     pass
             else:
                 print(f"Broker error: status code: {r.status_code}, response: {r.json()}")
