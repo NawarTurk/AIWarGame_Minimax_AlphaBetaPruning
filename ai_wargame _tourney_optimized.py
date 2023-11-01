@@ -717,6 +717,13 @@ class Game:
         return 1
 
 
+    def game.e0_attacker(self):
+        return
+
+    def game.e0_defender(self):
+        return
+        
+
     ### generate_children## ______________for minimax later________________________________________________>
     def generate_children(self):
         children = []
