@@ -710,6 +710,13 @@ class Game:
 
         return evaluation
     
+    def game.e0_attacker(self):
+        return 1
+
+    def game.e0_defender(self):
+        return 1
+
+
     ### generate_children## ______________for minimax later________________________________________________>
     def generate_children(self):
         children = []
@@ -753,8 +760,8 @@ class Game:
 
 
 
-        return
-    def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+        # return
+    def alpha_beta_attacker (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
         # self.level_counter = self.options.max_depth - depth
         game.next_turn()
         children = game.generate_children()
@@ -763,7 +770,37 @@ class Game:
             # print(f"current leaf eo is {game.e0()} of player")
             # self.e0_counter +=1
             # self.my_dict[self.level_counter] += 1
-            return game.e0() # assuming the use of e0
+            return game.e0_attacker() # assuming the use of e0
+        
+        if maximizing:
+            maxScore = float('-inf')
+            for child in children:
+                minimaxScore = self.alpha_beta(child, depth-1, alpha, beta, False, start_time, max_time_allowed)
+                maxScore = max(maxScore, minimaxScore)
+                alpha = max(alpha, minimaxScore)
+                if beta <= alpha:
+                    break
+            return maxScore
+        else:
+            minScore = float('inf')
+            for child in children:
+                minimaxScore = self.alpha_beta(child, depth-1, True, alpha, beta, start_time, max_time_allowed)
+                minScore = min(minScore, minimaxScore)
+                beta = min(beta, minimaxScore)
+                if beta <= alpha:
+                    break
+            return minScore
+
+    def alpha_beta_defender (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+        # self.level_counter = self.options.max_depth - depth
+        game.next_turn()
+        children = game.generate_children()
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
+            # print(f"current leaf eo is {game.e0()} of player")
+            # self.e0_counter +=1
+            # self.my_dict[self.level_counter] += 1
+            return game.e0_defender() # assuming the use of e0
         
         if maximizing:
             maxScore = float('-inf')
@@ -793,12 +830,12 @@ class Game:
         depth = self.options.max_depth; # check
         is_alpha_beta = self.options.alpha_beta
 
-        if (self.next_player == Player.Attacker): # if the current player is attacker maximize
-            maximizing = False # for the child minimize
-            best_score = float('-inf')
-        else:
-            maximizing = True # for the child
-            best_score = float('inf')
+        # if (self.next_player == Player.Attacker): # if the current player is attacker maximize
+        #     maximizing = False # for the child minimize
+        #     best_score = float('-inf')
+        # else:
+        #     maximizing = True # for the child
+        #     best_score = float('inf')
 
         move_candidates = list(self.move_candidates())
         self.num_of_children_cumulative += len(move_candidates)
@@ -814,7 +851,21 @@ class Game:
                 counter +=1 
 
                 # if (is_alpha_beta):
-                current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
+
+                
+                if (self.next_player == Player.Attacker): # if the current player is attacker maximize
+                    maximizing = False # for the child minimize
+                    best_score = float('-inf')
+                    current_move_score = self.alpha_beta_attacker(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
+
+                else:
+                    maximizing = True # for the child
+                    best_score = float('inf')
+                    current_move_score = self.alpha_beta_defender(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
+
+
+
+                # current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
                 # else:
                 #     current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
 
