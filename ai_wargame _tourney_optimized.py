@@ -10,8 +10,8 @@ import random
 import requests
 
 # maximum and minimum values for our heuristic scores (usually represents an end of game condition)
-MAX_HEURISTIC_SCORE = 2000000000
-MIN_HEURISTIC_SCORE = -2000000000
+# MAX_HEURISTIC_SCORE = 2000000000
+# MIN_HEURISTIC_SCORE = -2000000000
 
 class UnitType(Enum):
     """Every unit type."""
@@ -247,11 +247,11 @@ class Game:
     stats: Stats = field(default_factory=Stats)
     _attacker_has_ai : bool = True
     _defender_has_ai : bool = True
-    e0_counter : int = 0
-    level_counter: int = 0
-    my_dict: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
-    my_dict_percent: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
-    num_of_children_cumulative: int = 0
+    # e0_counter : int = 0
+    # level_counter: int = 0
+    # my_dict: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
+    # my_dict_percent: dict = field(default_factory=lambda: {i: 0 for i in range(1, 10)})
+    # num_of_children_cumulative: int = 0
 
 
     
@@ -559,7 +559,7 @@ class Game:
                     print(f"Player {self.next_player.name}: moved from {mv.src} to {mv.dst}",end='')
                     print(result)
                     self.next_turn()
-                    print("Timeout time for this move: " + str(self.options.max_time) + " s") #time taken to do the move
+                    # print("Timeout time for this move: " + str(self.options.max_time) + " s") #time taken to do the move
                     return mv #returning the move done by user
                 else:
                     print("The move is not valid! Try again.")
@@ -570,7 +570,7 @@ class Game:
         if mv is not None:
             (success,result) = self.perform_move(mv)
             if success:
-                print(f"Computer {self.next_player.name}: ",end='')
+                # print(f"Computer {self.next_player.name}: ",end='')
                 print(result)
                 self.next_turn()
         return mv, score, elapsed_time, eval
@@ -723,46 +723,46 @@ class Game:
         else:
             return None
     
-    def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
-        self.level_counter = self.options.max_depth - depth
-        self.my_dict[self.level_counter] += 1
-        game.next_turn()
-        children = game.generate_children()
+    # def minimax (self, game, depth, maximizing, start_time, max_time_allowed):
+    #     self.level_counter = self.options.max_depth - depth
+    #     self.my_dict[self.level_counter] += 1
+    #     game.next_turn()
+    #     children = game.generate_children()
 
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
-            # print(f"current leaf eo is {game.e0()}")
-            # print(game)
-            self.my_dict[self.level_counter] += 1
-            self.e0_counter +=1
+    #     elapsed_time = (datetime.now() - start_time).total_seconds()
+    #     if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
+    #         # print(f"current leaf eo is {game.e0()}")
+    #         # print(game)
+    #         self.my_dict[self.level_counter] += 1
+    #         self.e0_counter +=1
 
-            return game.e0() # assuming the use of e0
+    #         return game.e0() # assuming the use of e0
         
-        if maximizing:
-            maxScore = float('-inf')
-            for child in children:
-                minimaxScore = self.minimax(child, depth-1, False, start_time, max_time_allowed)
-                maxScore = max(maxScore, minimaxScore)
-            return maxScore
-        else:
-            minScore = float('inf')
-            for child in children:
-                minimaxScore = self.minimax(child, depth-1, True, start_time, max_time_allowed)
-                minScore = min(minScore, minimaxScore)
-            return minScore
+    #     if maximizing:
+    #         maxScore = float('-inf')
+    #         for child in children:
+    #             minimaxScore = self.minimax(child, depth-1, False, start_time, max_time_allowed)
+    #             maxScore = max(maxScore, minimaxScore)
+    #         return maxScore
+    #     else:
+    #         minScore = float('inf')
+    #         for child in children:
+    #             minimaxScore = self.minimax(child, depth-1, True, start_time, max_time_allowed)
+    #             minScore = min(minScore, minimaxScore)
+    #         return minScore
 
 
 
         return
     def alpha_beta (self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
-        self.level_counter = self.options.max_depth - depth
+        # self.level_counter = self.options.max_depth - depth
         game.next_turn()
         children = game.generate_children()
         elapsed_time = (datetime.now() - start_time).total_seconds()
         if depth == 0 or children == None or (elapsed_time >= 0.9 * max_time_allowed) or game.is_finished():
             # print(f"current leaf eo is {game.e0()} of player")
-            self.e0_counter +=1
-            self.my_dict[self.level_counter] += 1
+            # self.e0_counter +=1
+            # self.my_dict[self.level_counter] += 1
             return game.e0() # assuming the use of e0
         
         if maximizing:
@@ -803,39 +803,41 @@ class Game:
         move_candidates = list(self.move_candidates())
         self.num_of_children_cumulative += len(move_candidates)
         if len(move_candidates) > 0:  
-            if ((datetime.now() - start_time).total_seconds() > 0.95 * max_time_allowed):
-                best_move = move_candidates[0]
-            else:
-                counter = 0
+            # if ((datetime.now() - start_time).total_seconds() > 0.95 * max_time_allowed):
+            #     best_move = move_candidates[0]
+            # else:
+            counter = 0
 
-                for move in move_candidates:
-                    gameCopy = self.clone()
-                    gameCopy.perform_move(move)
-                    counter +=1 
+            for move in move_candidates:
+                gameCopy = self.clone()
+                gameCopy.perform_move(move)
+                counter +=1 
 
-                    if (is_alpha_beta):
-                        current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
-                    else:
-                        current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
- 
-
-                    if (self.next_player == Player.Attacker):
-                        if (current_move_score>best_score):
-                            best_score = current_move_score
-                            best_move = move
-                    else:
-                        if (current_move_score<best_score):
-                            best_score = current_move_score
-                            best_move = move
+                # if (is_alpha_beta):
+                current_move_score = self.alpha_beta(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
+                # else:
+                #     current_move_score = self.minimax(gameCopy, depth-1, maximizing, start_time, max_time_allowed)
 
 
+                if (self.next_player == Player.Attacker):
+                    if (current_move_score>best_score):
+                        best_score = current_move_score
+                        best_move = move
+                else:
+                    if (current_move_score<best_score):
+                        best_score = current_move_score
+                        best_move = move
 
-            gameCopy = self.clone()
-            gameCopy.perform_move(best_move)
-            best_move_e_score = gameCopy.e0()
 
 
-            return (best_move_e_score, best_move, 0)  
+            # gameCopy = self.clone()
+            # gameCopy.perform_move(best_move)
+            # best_move_e_score = gameCopy.e0()
+
+
+            # return (best_move_e_score, best_move, 0)  
+            return (0, best_move, 0)  
+
         else:
             return (0, None, 0)
 
@@ -848,29 +850,31 @@ class Game:
         start_time = datetime.now()
         max_time_allowed = self.options.max_time
         (score, move, avg_depth) = self.generate_best_move(start_time, max_time_allowed)
-        elapsed_seconds = (datetime.now() - start_time).total_seconds()
-        self.stats.total_seconds += elapsed_seconds
-        print(f"Heuristic score: {score}")
-        print(f"Cumulative evals {self.e0_counter}")
+        # elapsed_seconds = (datetime.now() - start_time).total_seconds()
+        # self.stats.total_seconds += elapsed_seconds
+        # print(f"Heuristic score: {score}")
+        # print(f"Cumulative evals {self.e0_counter}")
         # print(f"Average recursive depth: {avg_depth:0.1f}")
-        print(f"Evals per depth: ",end='')
-        self.my_dict
-        for k in sorted(self.my_dict.keys()):
-            print(f"{k}:{self.my_dict[k]} ",end='')
-            self.my_dict_percent[k] = self.my_dict[k]/self.e0_counter
-        print()
-        print(f"Evals per depth%: ",end='')
-        for k in sorted(self.my_dict_percent.keys()):
-            print(f"{k}: {self.my_dict_percent[k] * 100:.2f}% ", end='')
-        print()
-        print(f"Average branching factor: {self.num_of_children_cumulative/(self.turns_played+1)}")
+        # print(f"Evals per depth: ",end='')
+        # self.my_dict
+        # for k in sorted(self.my_dict.keys()):
+        #     print(f"{k}:{self.my_dict[k]} ",end='')
+        #     self.my_dict_percent[k] = self.my_dict[k]/self.e0_counter
+        # print()
+        # print(f"Evals per depth%: ",end='')
+        # for k in sorted(self.my_dict_percent.keys()):
+        #     print(f"{k}: {self.my_dict_percent[k] * 100:.2f}% ", end='')
+        # print()
+        # print(f"Average branching factor: {self.num_of_children_cumulative/(self.turns_played+1)}")
 
-        total_evals = sum(self.stats.evaluations_per_depth.values())
-        if self.stats.total_seconds > 0:
-            print(f"Eval perf.: {total_evals/self.stats.total_seconds/1000:0.1f}k/s")
-        print(f"Elapsed time: {elapsed_seconds:0.1f}s")
+        # total_evals = sum(self.stats.evaluations_per_depth.values())
+        # if self.stats.total_seconds > 0:
+        #     print(f"Eval perf.: {total_evals/self.stats.total_seconds/1000:0.1f}k/s")
+        # print(f"Elapsed time: {elapsed_seconds:0.1f}s")
 
-        return move, score, elapsed_seconds, self.e0_counter
+        # return move, score, elapsed_seconds, self.e0_counter
+        return move, 0, 0, s0
+
 
     def post_move_to_broker(self, move: CoordPair):
         """Send a move to the game broker."""
@@ -973,62 +977,62 @@ def main():
     else:
         game_mode = "AI-AI"
       
-    # creating file with proper naming convention
-    filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(int(game.options.max_turns)) + ".txt"
-    # creating output file for the game
-    with open(filename, "w") as file:
-        file.write("1. The game parameters: \n\tTimeout time: " + str(game.options.max_time) + " s\n\t" + 
-                   "Max number of turns: " + str(int(game.options.max_turns)) + " turns\n\t" + 
-                   "Play Mode: " + game_mode + "\n")
-        if ("Comp" in game_type._name_):
-            file.write("\tAlpha-Beta: " + str(game.options.alpha_beta) + "\n")
-            file.write("\tHEURISTIC: e0\n")                 
-        file.write("\n")
-        file.write("2. Initial configuration of the board: \n\n" + str(game) + "\n")
-        file.write("3. Each Action of the game: \n")
+    # # creating file with proper naming convention
+    # filename = "gameTrace-" + str(game.options.alpha_beta).lower() + "-" + str(int(game.options.max_time)) + "-" + str(int(game.options.max_turns)) + ".txt"
+    # # creating output file for the game
+    # with open(filename, "w") as file:
+    #     file.write("1. The game parameters: \n\tTimeout time: " + str(game.options.max_time) + " s\n\t" + 
+    #                "Max number of turns: " + str(int(game.options.max_turns)) + " turns\n\t" + 
+    #                "Play Mode: " + game_mode + "\n")
+    #     if ("Comp" in game_type._name_):
+    #         file.write("\tAlpha-Beta: " + str(game.options.alpha_beta) + "\n")
+    #         file.write("\tHEURISTIC: e0\n")                 
+    #     file.write("\n")
+    #     file.write("2. Initial configuration of the board: \n\n" + str(game) + "\n")
+    #     file.write("3. Each Action of the game: \n")
                 
     # the main game loop
     while True:
-        with open(filename, "a") as file: #appending the completed moves to the created trace file
-            file.write("\n")
-            print()
-            print(game)
-            
-            winner = game.has_winner()
-            if winner is not None:
-                print(f"{winner.name} wins in {num_turn} turns!")
-                file.write(f"\n{winner.name} wins in {num_turn} turns!")
-                num_turn = num_turn + 1
-                break
-            if game.options.game_type == GameType.AttackerVsDefender:
-                user_move = game.human_turn()   
-                file.write(str(game) + "\n") 
-                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")          
-            elif game.options.game_type == GameType.AttackerVsComp and game.next_player == Player.Attacker:
-                user_move = game.human_turn()    
-                file.write(str(game) + "\n")
-                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")             
-            elif game.options.game_type == GameType.CompVsDefender and game.next_player == Player.Defender:
-                user_move = game.human_turn()    
-                file.write(str(game) + "\n")
-                file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")                
+        # with open(filename, "a") as file: #appending the completed moves to the created trace file
+        # file.write("\n")
+        print()
+        print(game)
+        
+        winner = game.has_winner()
+        if winner is not None:
+            print(f"{winner.name} wins in {num_turn} turns!")
+            # file.write(f"\n{winner.name} wins in {num_turn} turns!")
+            num_turn = num_turn + 1
+            break
+        if game.options.game_type == GameType.AttackerVsDefender:
+            user_move = game.human_turn()   
+            # file.write(str(game) + "\n") 
+            # file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")          
+        elif game.options.game_type == GameType.AttackerVsComp and game.next_player == Player.Attacker:
+            # user_move = game.human_turn()    
+            # file.write(str(game) + "\n")
+            # file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")             
+        elif game.options.game_type == GameType.CompVsDefender and game.next_player == Player.Defender:
+            user_move = game.human_turn()    
+            # file.write(str(game) + "\n")
+            # file.write("Move taken: " + str(user_move.src) + " to " + str(user_move.dst) + "\n")                
+        else:
+            player = game.next_player
+            move, score, elapsed_time, eval = game.computer_turn()
+            print(move)
+            # file.write(str(game) + "\n")
+            # file.write("Move taken: " + str(move.src) + " to " + str(move.dst) + "\n")
+            # file.write(f"Time for this action: {elapsed_time:0.1f}s \n")
+            # file.write(f"Heuristic score: {score}\n")
+            # file.write(f"Cumulative evals: {eval}\n")
+            if move is not None:
+                game.post_move_to_broker(move)
             else:
-                player = game.next_player
-                move, score, elapsed_time, eval = game.computer_turn()
-                print(move)
-                file.write(str(game) + "\n")
-                file.write("Move taken: " + str(move.src) + " to " + str(move.dst) + "\n")
-                file.write(f"Time for this action: {elapsed_time:0.1f}s \n")
-                file.write(f"Heuristic score: {score}\n")
-                file.write(f"Cumulative evals: {eval}\n")
-                if move is not None:
-                    game.post_move_to_broker(move)
-                else:
-                    print("Computer doesn't know what to do!!!")
-                    file.write("Computer doesn't know what to do!!!")
-                    exit(1)
-                        
-            file.write("\n----------------------------")
+                # print("Computer doesn't know what to do!!!")
+                # file.write("Computer doesn't know what to do!!!")
+                exit(1)
+                    
+            # file.write("\n----------------------------")
             num_turn = num_turn + 1
 
 
