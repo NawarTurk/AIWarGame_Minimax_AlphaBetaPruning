@@ -549,7 +549,8 @@ class Game:
                     if success:
                         self.next_turn()
                         break
-                sleep(0.1)
+#____________________________________________________________
+                # sleep(0.1)
         else:
             while True:
                 mv = self.read_move()
@@ -710,18 +711,56 @@ class Game:
 
         return evaluation
     
-    def game.e0_attacker(self):
-        return 1
-
     def game.e0_defender(self):
-        return 1
+        attacker_score = 1
+        defender_score = 0
+        coordinate_score = 0
 
+        defenderUnits = self.player_units(self.next_player)
+
+        for coordinates, unit in defenderUnits:
+            coordinate_score += ((2 - coordinates.row) + (2 - coordinates.col)) * 1000
+
+            defender_score += unit.health * 1000  # test without it 
+
+            if unit.type == UnitType.AI:
+                defenderScore += unit.health * 1000000
+                if (coordinates.row == 0 and coordinates.col === 0)
+                    defender_score += 100000
+            
+            elif unit.type==UnitType.Tech:
+                defenderScore += unit.health * 10000
+                if coordinates.row <= 1 and coordinates.col <= 1:
+                    defender_score += 100000
+
+            defender_score += coordinate_score
+        
+        return attacker_score - defender_score
 
     def game.e0_attacker(self):
-        return
+        attacker_score = 1000000
+        defender_score = 1
+        coordinate_score = 0
 
-    def game.e0_defender(self):
-        return
+        attackerUnits = self.player_units(self.next_player)
+        defenderUnits = self.player_units(self.next_player.next())
+        defender_ai = None
+
+
+        for coordinates, unit in defenderUnits:
+            if unit.type == UnitType.AI:
+                defender_ai = unit
+                break
+
+        if defender_ai == None return 10000000  # The defender AI in this scenario is dead
+
+        for coordinates, unit in attackerUnits:
+            distance_from_ai = (coordinates.col - defender_ai.col) + (coordinates.row - defender_ai.row)
+            attacker_score -= distance_from_ai * 1000
+            
+        attacker_score += (9 - defender_ai.health) * 100000
+        return attacker_score - defender_score
+
         
 
     ### generate_children## ______________for minimax later________________________________________________>
