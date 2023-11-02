@@ -711,10 +711,13 @@ class Game:
 
         return evaluation
     
-    def game_e0_defender(self):
+    def game_e0_defender(self, move):
         attacker_score = 1
         defender_score = 0
         coordinate_score = 0
+
+        if move.src.col == move.dst.col and move.src.row == move.dst.row:
+            defender_score -= 2000000000000000
 
         if (self.next_player == Player.Attacker):
             attackerUnits = self.player_units(self.next_player)
@@ -724,9 +727,9 @@ class Game:
             attackerUnits = self.player_units(self.next_player.next())
 
         for coordinates, unit in defenderUnits:
-            coordinate_score += ((2 - coordinates.row) + (2 - coordinates.col)) * 1000
+            coordinate_score += ((coordinates.row) + (coordinates.col)) * 100000
 
-            defender_score += unit.health * 1000  # test without it 
+            defender_score += unit.health * 100000  # test without it
 
             if unit.type == UnitType.AI:
                 defender_score += unit.health * 1000000
@@ -738,14 +741,17 @@ class Game:
                 if coordinates.row <= 1 and coordinates.col <= 1:
                     defender_score += 100000
 
-            defender_score += coordinate_score
+            defender_score += coordinate_score / (len(list(defenderUnits))+1)
         
         return attacker_score - defender_score
 
-    def game_e0_attacker(self):
+    def game_e0_attacker(self, move):
         attacker_score = 1000000
         defender_score = 1
         coordinate_score = 0
+
+        if move.src.col == move.dst.col and move.src.row == move.dst.row:
+            attacker_score -= 2000000000000000
 
         if (self.next_player == Player.Attacker):
             attackerUnits = self.player_units(self.next_player)
@@ -763,18 +769,28 @@ class Game:
                 defender_ai_coord = coordinates
                 break
 
+
+
         if defender_ai_unit == None:
-            return 10000000  # The defender AI in this scenario is dead
+            return 999999999999  # The defender AI in this scenario is dead
 
         for coordinates, unit in attackerUnits:
             distance_from_ai = (coordinates.col - defender_ai_coord.col) + (coordinates.row - defender_ai_coord.row)
 
-            attacker_score -= distance_from_ai * 1000
+            attacker_score -= (distance_from_ai * 250) / (len(list(attackerUnits)) +1)
+
+            if unit.type == UnitType.AI:
+                attacker_score += unit.health * 100000000
+                attacker_score = coordinates.row * 1000000 + coordinates.col * 1000000
+
+            if self.turns_played > 40:
+                if unit.type == UnitType.Virus:
+                    attacker_score = 100000 - (distance_from_ai * 10000)
+
             
         attacker_score += (9 - defender_ai_unit.health) * 100000
         return attacker_score - defender_score
 
-        
 
     ### generate_children## ______________for minimax later________________________________________________>
     def generate_children(self):
@@ -820,7 +836,7 @@ class Game:
 
 
         # return
-    def alpha_beta_attacker(self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+    def alpha_beta_attacker(self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed, move):
         # self.level_counter = self.options.max_depth - depth
         game.next_turn()
         children = game.generate_children()
@@ -829,14 +845,14 @@ class Game:
             # print(f"current leaf eo is {game.e0()} of player")
             # self.e0_counter +=1
             # self.my_dict[self.level_counter] += 1
-            score = game.game_e0_attacker()
+            score = game.game_e0_attacker(move)
             # print(f"The score in attacker alpha beta is: {score}")
             return score # assuming the use of e0
         
         if maximizing:
             maxScore = float('-inf')
             for child in children:
-                minimaxScore = self.alpha_beta_attacker(child, depth-1, alpha, beta, False, start_time, max_time_allowed)
+                minimaxScore = self.alpha_beta_attacker(child, depth-1, alpha, beta, False, start_time, max_time_allowed, move)
                 maxScore = max(maxScore, minimaxScore)
                 alpha = max(alpha, minimaxScore)
                 if beta <= alpha:
@@ -845,14 +861,14 @@ class Game:
         else:
             minScore = float('inf')
             for child in children:
-                minimaxScore = self.alpha_beta_attacker(child, depth-1, alpha, beta, True, start_time, max_time_allowed)
+                minimaxScore = self.alpha_beta_attacker(child, depth-1, alpha, beta, True, start_time, max_time_allowed, move)
                 minScore = min(minScore, minimaxScore)
                 beta = min(beta, minimaxScore)
                 if beta <= alpha:
                     break
             return minScore
 
-    def alpha_beta_defender(self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed):
+    def alpha_beta_defender(self, game, depth, alpha, beta, maximizing, start_time, max_time_allowed, move):
         # self.level_counter = self.options.max_depth - depth
         game.next_turn()
         children = game.generate_children()
@@ -861,15 +877,15 @@ class Game:
             # print(f"current leaf eo is {game.e0()} of player")
             # self.e0_counter +=1
             # self.my_dict[self.level_counter] += 1
-            score = game.game_e0_defender() # assuming the use of e0
-            # print(f"The score in attacker alpha beta is: {score}")
+            score = game.game_e0_defender(move)
+            # print(f"The score in defender alpha beta is: {score}")
             return score  # assuming the use of e0
 
         
         if maximizing:
             maxScore = float('-inf')
             for child in children:
-                minimaxScore = self.alpha_beta_defender(child, depth-1, alpha, beta, False, start_time, max_time_allowed)
+                minimaxScore = self.alpha_beta_defender(child, depth-1, alpha, beta, False, start_time, max_time_allowed, move)
                 maxScore = max(maxScore, minimaxScore)
                 alpha = max(alpha, minimaxScore)
                 if beta <= alpha:
@@ -878,7 +894,7 @@ class Game:
         else:
             minScore = float('inf')
             for child in children:
-                minimaxScore = self.alpha_beta_defender(child, depth-1, alpha, beta, True, start_time, max_time_allowed)
+                minimaxScore = self.alpha_beta_defender(child, depth-1, alpha, beta, True, start_time, max_time_allowed, move)
                 minScore = min(minScore, minimaxScore)
                 beta = min(beta, minimaxScore)
                 if beta <= alpha:
@@ -889,7 +905,7 @@ class Game:
     ## renamed from random_move() __________________________________________________________________________>
     def generate_best_move(self, start_time, max_time_allowed) -> Tuple[int, CoordPair | None, float]:
         best_move = None
-        best_score = None
+        best_score = int
         maximizing = None
         depth = self.options.max_depth; # check
         is_alpha_beta = self.options.alpha_beta
@@ -909,6 +925,11 @@ class Game:
             # else:
             counter = 0
 
+            if (self.next_player == Player.Attacker):
+                best_score = float('-inf')
+            else:
+                best_score = float('inf')
+
             for move in move_candidates:
                 gameCopy = self.clone()
                 gameCopy.perform_move(move)
@@ -919,15 +940,13 @@ class Game:
                 
                 if (self.next_player == Player.Attacker): # if the current player is attacker maximize
                     maximizing = False # for the child minimize
-                    best_score = float('-inf')
-                    # current_move_score = self.alpha_beta_attacker(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
-                    current_move_score = self.alpha_beta_defender(gameCopy, depth - 1, float('-inf'), float('inf'),  maximizing, start_time, max_time_allowed)
+                    current_move_score = self.alpha_beta_attacker(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed, move)
+                    # current_move_score = self.alpha_beta_defender(gameCopy, depth - 1, float('-inf'), float('inf'),  maximizing, start_time, max_time_allowed)
 
                 else:
                     maximizing = True # for the child
-                    best_score = float('inf')
-                    # current_move_score = self.alpha_beta_defender(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
-                    current_move_score = self.alpha_beta_attacker(gameCopy, depth - 1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
+                    current_move_score = self.alpha_beta_defender(gameCopy, depth-1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed, move)
+                    # current_move_score = self.alpha_beta_attacker(gameCopy, depth - 1, float('-inf'), float('inf'), maximizing, start_time, max_time_allowed)
 
 
 
@@ -937,14 +956,21 @@ class Game:
 
 
                 if (self.next_player == Player.Attacker):
-                    if (current_move_score>best_score):
+                    # print(best_score)
+                    # print(current_move_score)
+                    # print(current_move_score > best_score)
+                    # print("//////")
+                    if (current_move_score > best_score):
                         best_score = current_move_score
+                        # print(f"current score is:{current_move_score}")
                         best_move = move
                 else:
-                    if (current_move_score<best_score):
+                    if (current_move_score < best_score):
+
                         best_score = current_move_score
                         best_move = move
 
+                # print(f"best score is this:{best_score}")
 
 
             # gameCopy = self.clone()
@@ -952,7 +978,9 @@ class Game:
             # best_move_e_score = gameCopy.e0()
 
 
-            # return (best_move_e_score, best_move, 0)  
+            # return (best_move_e_score, best_move, 0)
+            print(f"the final best score issssssss....:{best_score}")
+            # print(type(best_score))
             return (0, best_move, 0)  
 
         else:
